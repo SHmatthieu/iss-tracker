@@ -1,12 +1,11 @@
 let lat = 0;
 let long = 0;
 
-let entity = new og.Entity({
+let iss = new og.Entity({
     'name': 'iss',
     'lonlat': [0, 0, 1000000],
     'label': { 'text': "iss" }
 });
-
 
 
 let osm = new og.layer.XYZ("OpenStreetMap", {
@@ -23,9 +22,18 @@ let globus = new og.Globe({
     "layers": [osm]
 });
 
-let e = new og.EntityCollection({ 'entities': [entity] });
+
+
+
+let e = new og.EntityCollection({
+    'entities': [iss]
+});
 e.events.on("draw", (c) => {
-    c.each((e) => { e.setLonLat(new og.LonLat(long, lat, 420000)) });
+    c.each((e) => {
+        if (e.properties.name == "iss") {
+            e.setLonLat(new og.LonLat(long, lat, 420000));
+        }
+    });
 });
 e.addTo(globus.planet);
 
@@ -44,6 +52,9 @@ let f = () => {
     http.send(null);
 
     setTimeout(f, 1000);
-}
-
+};
 f();
+
+document.getElementById("setCam").onclick = () => {
+    globus.planet.camera.flyLonLat(new og.LonLat(long, lat));
+};
