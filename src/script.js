@@ -1,11 +1,25 @@
 let lat = 0;
 let long = 0;
+let oldLat = 0;
+let oldLong = 0;
+let path = [];
+let update = false;
 
 let iss = new og.Entity({
     'name': 'iss',
     'lonlat': [0, 0, 1000000],
     'label': { 'text': "iss" }
 });
+
+let entity = new og.Entity({
+    'name': 'path',
+    'polyline': {
+        'pathLonLat': path,
+        'thickness': 10,
+        'color': "red"
+    }
+});
+
 
 
 let osm = new og.layer.XYZ("OpenStreetMap", {
@@ -24,14 +38,18 @@ let globus = new og.Globe({
 
 
 
-
 let e = new og.EntityCollection({
-    'entities': [iss]
+    'entities': [iss, entity]
 });
 e.events.on("draw", (c) => {
     c.each((e) => {
         if (e.properties.name == "iss") {
             e.setLonLat(new og.LonLat(long, lat, 420000));
+        } else if (e.properties.name == "path") {
+            if (update) {
+                e.polyline.setPathLonLat(path);
+                update = false;
+            }
         }
     });
 });
@@ -45,7 +63,12 @@ let f = () => {
             let data = JSON.parse(http.responseText);
             long = parseFloat(data['iss_position']['longitude']);
             lat = parseFloat(data['iss_position']['latitude']);
-            console.log(data['iss_position']);
+            if (oldLong != 0 && oldLat != 0) {
+                path.push([new og.LonLat(oldLong, oldLat, 20000), new og.LonLat(long, lat, 20000)]);
+                update = true;
+            }
+            oldLong = long;
+            oldLat = lat;
         }
     };
     http.open("GET", "http://api.open-notify.org/iss-now.json", true);
