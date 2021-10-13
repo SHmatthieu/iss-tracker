@@ -1,7 +1,11 @@
 let lat = 0;
 let long = 0;
+let alt = 0;
+
 let oldLat = 0;
 let oldLong = 0;
+let oldAlt = 0;
+
 let path = [];
 let update = false;
 
@@ -44,7 +48,7 @@ let e = new og.EntityCollection({
 e.events.on("draw", (c) => {
     c.each((e) => {
         if (e.properties.name == "iss") {
-            e.setLonLat(new og.LonLat(long, lat, 420000));
+            e.setLonLat(new og.LonLat(long, lat, alt));
         } else if (e.properties.name == "path") {
             if (update) {
                 e.polyline.setPathLonLat(path);
@@ -61,20 +65,22 @@ let f = () => {
     http.onreadystatechange = function() {
         if (http.status == 200 && http.readyState == 4) {
             let data = JSON.parse(http.responseText);
-            long = parseFloat(data['iss_position']['longitude']);
-            lat = parseFloat(data['iss_position']['latitude']);
+            long = parseFloat(data['longitude']);
+            lat = parseFloat(data['latitude']);
+            alt = parseFloat(data['altitude']) * 1000;
             if (oldLong != 0 && oldLat != 0) {
-                path.push([new og.LonLat(oldLong, oldLat, 20000), new og.LonLat(long, lat, 20000)]);
+                path.push([new og.LonLat(oldLong, oldLat, oldAlt), new og.LonLat(long, lat, alt)]);
                 update = true;
             }
             oldLong = long;
             oldLat = lat;
+            oldAlt = alt;
         }
     };
-    http.open("GET", "http://api.open-notify.org/iss-now.json", true);
+    http.open("GET", "https://api.wheretheiss.at/v1/satellites/25544", true);
     http.send(null);
 
-    setTimeout(f, 1000);
+    setTimeout(f, 1100);
 };
 f();
 
